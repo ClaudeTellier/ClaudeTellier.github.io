@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klo Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Lexend:wght@400;700&family=Patrick+Hand&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ui-bg: #1f2937;
+    --ui-bg2: #374151;
+    --ui-fg: #f9fafb;
+    --ui-accent: #3b82f6;
+    --page-bg: #ffffff;
+    --page-fg: #111111;
+    --desk-bg: #e5e7eb;
+    --box-border: #2563eb;
+    --box-bg: #eff6ff;
+  }
+  body.theme-cream { --page-bg: #fdf8e8; --page-fg: #1a1a1a; --desk-bg: #d6d3c4; --box-bg: #f5ecd0; --box-border: #b45309; }
+  body.theme-dark  { --page-bg: #14213d; --page-fg: #f8f8f2; --desk-bg: #0b1222; --box-bg: #1e3160; --box-border: #fbbf24; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--desk-bg);
+    display: flex; flex-direction: column;
+  }
+
+  /* ---------- Toolbar ---------- */
+  #toolbar {
+    background: var(--ui-bg); color: var(--ui-fg);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 8px 10px; position: sticky; top: 0; z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  }
+  .group { display: flex; align-items: center; gap: 4px; padding-right: 8px; border-right: 1px solid #4b5563; }
+  .group:last-child { border-right: none; }
+  .label { font-size: 12px; opacity: .7; margin-right: 2px; }
+  button, select {
+    font: inherit; font-size: 15px; color: var(--ui-fg);
+    background: var(--ui-bg2); border: 1px solid #4b5563; border-radius: 6px;
+    min-width: 36px; height: 36px; padding: 0 8px; cursor: pointer;
+  }
+  button:hover, select:hover { background: #4b5563; }
+  button.active { background: var(--ui-accent); border-color: var(--ui-accent); }
+  button.wide { padding: 0 12px; }
+  #btnPresent { background: #16a34a; border-color: #16a34a; font-weight: 600; }
+  #btnPresent:hover { background: #15803d; }
+  .swatch {
+    min-width: 28px; width: 28px; height: 28px; padding: 0;
+    border: 2px solid #9ca3af; border-radius: 50%;
+  }
+  .swatch.none { background: linear-gradient(135deg, #fff 45%, #dc2626 45%, #dc2626 55%, #fff 55%); }
+  input[type=color] { width: 32px; height: 32px; border: none; background: none; cursor: pointer; padding: 0; }
+  #fontSize { width: 74px; }
+  #fontName { width: 170px; }
+
+  /* ---------- Page ---------- */
+  #desk { flex: 1; overflow: auto; padding: 24px; }
+  #page {
+    background: var(--page-bg); color: var(--page-fg);
+    max-width: 1400px; min-height: calc(100vh - 140px);
+    margin: 0 auto; padding: 40px 60px;
+    border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    transform-origin: top center;
+  }
+  #editor {
+    outline: none; min-height: 60vh;
+    font-family: "Atkinson Hyperlegible", Arial, sans-serif;
+    font-size: 40px; line-height: 1.5;
+    word-wrap: break-word;
+  }
+  #editor:empty::before { content: "Type your summary here…"; opacity: .35; }
+  #editor h1 { font-size: 1.6em; margin: .2em 0 .4em; text-decoration: underline; text-underline-offset: .15em; }
+  #editor h2 { font-size: 1.25em; margin: .4em 0 .2em; }
+  #editor h3 { font-size: 1.05em; margin: .3em 0 .1em; font-style: italic; }
+  #editor p, #editor div { margin: 0; }
+  #editor ul, #editor ol { margin: .2em 0; padding-left: 1.3em; }
+  #editor hr { border: none; border-top: 3px solid currentColor; opacity: .4; margin: .5em 0; }
+  #editor .box {
+    border: 4px solid var(--box-border); background: var(--box-bg);
+    border-radius: 12px; padding: .3em .6em; margin: .4em 0;
+  }
+  /* readable text on highlights in dark theme */
+  body.theme-dark #editor [style*="background-color"] { color: #111; }
+
+  #status {
+    background: var(--ui-bg); color: #9ca3af; font-size: 13px;
+    padding: 4px 12px; display: flex; justify-content: space-between;
+  }
+
+  /* ---------- Presentation mode ---------- */
+  body.present #toolbar, body.present #status { display: none; }
+  body.present #desk { padding: 0; }
+  body.present #page {
+    max-width: none; min-height: 100vh; margin: 0;
+    border-radius: 0; box-shadow: none; padding: 3vh 4vw;
+  }
+  #exitHint {
+    display: none; position: fixed; right: 12px; bottom: 12px;
+    background: rgba(0,0,0,.55); color: #fff; border: none;
+    font-size: 14px; height: auto; padding: 6px 10px; opacity: .25;
+  }
+  #exitHint:hover { opacity: 1; }
+  body.present #exitHint { display: block; }
+
+  @media print {
+    #toolbar, #status, #exitHint { display: none !important; }
+    #desk { padding: 0; overflow: visible; }
+    #page { box-shadow: none; max-width: none; padding: 0; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="group">
+    <button data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
+    <button data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
+  </div>
+
+  <div class="group">
+    <select id="blockFormat" title="Paragraph style">
+      <option value="p">Normal text</option>
+      <option value="h1">Title</option>
+      <option value="h2">Heading</option>
+      <option value="h3">Subheading</option>
+    </select>
+    <select id="fontName" title="Font">
+      <option value="Atkinson Hyperlegible">Atkinson (readable)</option>
+      <option value="Andika">Andika (school)</option>
+      <option value="Lexend">Lexend</option>
+      <option value="Arial">Arial</option>
+      <option value="Verdana">Verdana</option>
+      <option value="Comic Sans MS">Comic Sans</option>
+      <option value="Patrick Hand">Handwriting</option>
+      <option value="Merriweather">Merriweather (serif)</option>
+      <option value="Courier New">Courier</option>
+    </select>
+    <select id="fontSize" title="Font size">
+      <option>20</option><option>24</option><option>28</option><option>32</option>
+      <option>36</option><option selected>40</option><option>48</option><option>56</option>
+      <option>64</option><option>72</option><option>88</option><option>110</option>
+    </select>
+  </div>
+
+  <div class="group">
+    <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+    <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+    <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+    <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+    <button data-cmd="removeFormat" title="Clear formatting">⌫ Tx</button>
+  </div>
+
+  <div class="group">
+    <span class="label">Text</span>
+    <button class="swatch" data-fore="auto" title="Default colour" style="background:var(--page-fg)"></button>
+    <button class="swatch" data-fore="#dc2626" title="Red" style="background:#dc2626"></button>
+    <button class="swatch" data-fore="#2563eb" title="Blue" style="background:#2563eb"></button>
+    <button class="swatch" data-fore="#16a34a" title="Green" style="background:#16a34a"></button>
+    <button class="swatch" data-fore="#9333ea" title="Purple" style="background:#9333ea"></button>
+    <input type="color" id="foreCustom" value="#ea580c" title="Custom text colour">
+  </div>
+
+  <div class="group">
+    <span class="label">Highlight</span>
+    <button class="swatch" data-hilite="#fde047" title="Yellow" style="background:#fde047"></button>
+    <button class="swatch" data-hilite="#86efac" title="Green" style="background:#86efac"></button>
+    <button class="swatch" data-hilite="#67e8f9" title="Cyan" style="background:#67e8f9"></button>
+    <button class="swatch" data-hilite="#f9a8d4" title="Pink" style="background:#f9a8d4"></button>
+    <button class="swatch" data-hilite="#fdba74" title="Orange" style="background:#fdba74"></button>
+    <button class="swatch none" data-hilite="transparent" title="Remove highlight"></button>
+  </div>
+
+  <div class="group">
+    <button data-cmd="justifyLeft" title="Align left">⫷</button>
+    <button data-cmd="justifyCenter" title="Centre">≡</button>
+    <button data-cmd="justifyRight" title="Align right">⫸</button>
+    <button data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+    <button data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+    <button data-cmd="outdent" title="Decrease indent">⇤</button>
+    <button data-cmd="indent" title="Increase indent">⇥</button>
+  </div>
+
+  <div class="group">
+    <button id="btnBox" class="wide" title="Put selection in a framed box (key idea)">▭ Box</button>
+    <button id="btnLine" title="Horizontal line">―</button>
+    <button id="btnDate" class="wide" title="Insert today's date">📅 Date</button>
+  </div>
+
+  <div class="group">
+    <select id="lineHeight" title="Line spacing">
+      <option value="1.2">Spacing 1.2</option>
+      <option value="1.5" selected>Spacing 1.5</option>
+      <option value="1.8">Spacing 1.8</option>
+      <option value="2.2">Spacing 2.2</option>
+    </select>
+    <select id="theme" title="Board colour">
+      <option value="white">White board</option>
+      <option value="cream">Cream (less glare)</option>
+      <option value="dark">Dark board</option>
+    </select>
+    <button id="zoomOut" title="Zoom out">−</button>
+    <button id="zoomReset" title="Reset zoom">100%</button>
+    <button id="zoomIn" title="Zoom in">+</button>
+  </div>
+
+  <div class="group">
+    <button id="btnNew" class="wide" title="New document">New</button>
+    <button id="btnOpen" class="wide" title="Open a saved file">Open</button>
+    <button id="btnSave" class="wide" title="Download as file (Ctrl+S)">Save</button>
+    <button id="btnPrint" class="wide" title="Print / save as PDF">Print</button>
+    <button id="btnPresent" class="wide" title="Full-screen projection mode (F9)">▶ Present</button>
+  </div>
+  <input type="file" id="fileInput" accept=".html,.htm,.txt" hidden>
+</div>
+
+<div id="desk">
+  <div id="page">
+    <div id="editor" contenteditable="true" spellcheck="true"></div>
+  </div>
+</div>
+
+<div id="status">
+  <span id="words">0 words</span>
+  <span id="saved">Autosaved in this browser</span>
+</div>
+
+<button id="exitHint" title="Exit presentation (Esc or F9)">✕ Exit (Esc)</button>
+
+<script>
+(() => {
+  const editor = document.getElementById('editor');
+  const page = document.getElementById('page');
+  const STORE = 'klo-board-v1';
+  let savedRange = null;
+  let zoom = 1;
+
+  /* ---------- Selection handling ---------- */
+  function saveSelection() {
+    const sel = window.getSelection();
+    if (sel.rangeCount && editor.contains(sel.anchorNode)) savedRange = sel.getRangeAt(0).cloneRange();
+  }
+  function restoreSelection() {
+    editor.focus();
+    if (savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+    }
+  }
+  document.addEventListener('selectionchange', () => { saveSelection(); updateState(); });
+
+  function exec(cmd, val = null) {
+    restoreSelection();
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand(cmd, false, val);
+    saveSelection();
+    changed();
+  }
+
+  // keep focus in editor when clicking buttons
+  document.querySelectorAll('#toolbar button').forEach(b =>
+    b.addEventListener('mousedown', e => e.preventDefault()));
+
+  document.querySelectorAll('[data-cmd]').forEach(b =>
+    b.addEventListener('click', () => exec(b.dataset.cmd)));
+
+  /* ---------- Colours ---------- */
+  document.querySelectorAll('[data-fore]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.fore === 'auto') {
+      exec('foreColor', '#010101');
+      editor.querySelectorAll('[style*="color: rgb(1, 1, 1)"], font[color="#010101"]').forEach(el => {
+        el.style.removeProperty('color'); el.removeAttribute('color');
+      });
+      changed();
+    } else exec('foreColor', b.dataset.fore);
+  }));
+  document.getElementById('foreCustom').addEventListener('input', e => exec('foreColor', e.target.value));
+  document.querySelectorAll('[data-hilite]').forEach(b =>
+    b.addEventListener('click', () => exec('hiliteColor', b.dataset.hilite)));
+
+  /* ---------- Fonts ---------- */
+  document.getElementById('fontName').addEventListener('change', e => exec('fontName', e.target.value));
+
+  document.getElementById('fontSize').addEventListener('change', e => {
+    const px = e.target.value;
+    restoreSelection();
+    document.execCommand('styleWithCSS', false, false);
+    document.execCommand('fontSize', false, '7');
+    editor.querySelectorAll('font[size="7"]').forEach(f => {
+      const span = document.createElement('span');
+      span.style.fontSize = px + 'px';
+      span.innerHTML = f.innerHTML;
+      span.querySelectorAll('[style*="font-size"]').forEach(c => c.style.removeProperty('font-size'));
+      f.replaceWith(span);
+    });
+    editor.querySelectorAll('[style*="xxx-large"]').forEach(el => el.style.fontSize = px + 'px');
+    saveSelection(); changed();
+  });
+
+  document.getElementById('blockFormat').addEventListener('change', e => exec('formatBlock', '<' + e.target.value + '>'));
+
+  /* ---------- Inserts ---------- */
+  document.getElementById('btnBox').addEventListener('click', () => {
+    restoreSelection();
+    const sel = window.getSelection();
+    const html = sel.rangeCount && !sel.isCollapsed
+      ? (() => { const d = document.createElement('div'); d.appendChild(sel.getRangeAt(0).cloneContents()); return d.innerHTML; })()
+      : 'Key idea…';
+    document.execCommand('insertHTML', false, '<div class="box">' + html + '</div><p><br></p>');
+    changed();
+  });
+  document.getElementById('btnLine').addEventListener('click', () => exec('insertHTML', '<hr><p><br></p>'));
+  document.getElementById('btnDate').addEventListener('click', () => {
+    const d = new Date();
+    const n = d.getDate();
+    const suf = (n % 10 === 1 && n !== 11) ? 'st' : (n % 10 === 2 && n !== 12) ? 'nd' : (n % 10 === 3 && n !== 13) ? 'rd' : 'th';
+    const day = d.toLocaleDateString('en-GB', { weekday: 'long' });
+    const month = d.toLocaleDateString('en-GB', { month: 'long' });
+    exec('insertText', `${day}, ${month} ${n}${suf}`);
+  });
+
+  /* ---------- Toolbar state ---------- */
+  const stateCmds = ['bold', 'italic', 'underline', 'strikeThrough', 'justifyLeft', 'justifyCenter', 'justifyRight', 'insertUnorderedList', 'insertOrderedList'];
+  function updateState() {
+    if (!editor.contains(document.getSelection().anchorNode)) return;
+    stateCmds.forEach(c => {
+      const b = document.querySelector(`[data-cmd="${c}"]`);
+      try { b.classList.toggle('active', document.queryCommandState(c)); } catch (_) {}
+    });
+    try {
+      const blk = (document.queryCommandValue('formatBlock') || 'p').toLowerCase().replace(/[<>]/g, '');
+      document.getElementById('blockFormat').value = ['h1', 'h2', 'h3'].includes(blk) ? blk : 'p';
+    } catch (_) {}
+  }
+
+  /* ---------- Page settings ---------- */
+  const settings = { theme: 'white', lineHeight: '1.5', zoom: 1 };
+  function applySettings() {
+    document.body.classList.remove('theme-cream', 'theme-dark');
+    if (settings.theme !== 'white') document.body.classList.add('theme-' + settings.theme);
+    editor.style.lineHeight = settings.lineHeight;
+    zoom = settings.zoom;
+    page.style.zoom = zoom;
+    document.getElementById('zoomReset').textContent = Math.round(zoom * 100) + '%';
+    document.getElementById('theme').value = settings.theme;
+    document.getElementById('lineHeight').value = settings.lineHeight;
+  }
+  document.getElementById('theme').addEventListener('change', e => { settings.theme = e.target.value; applySettings(); persist(); });
+  document.getElementById('lineHeight').addEventListener('change', e => { settings.lineHeight = e.target.value; applySettings(); persist(); });
+  const setZoom = z => { settings.zoom = Math.min(2.5, Math.max(0.5, Math.round(z * 10) / 10)); applySettings(); persist(); };
+  document.getElementById('zoomIn').addEventListener('click', () => setZoom(zoom + 0.1));
+  document.getElementById('zoomOut').addEventListener('click', () => setZoom(zoom - 0.1));
+  document.getElementById('zoomReset').addEventListener('click', () => setZoom(1));
+
+  /* ---------- Autosave ---------- */
+  let timer;
+  function changed() {
+    const words = (editor.innerText.trim().match(/\S+/g) || []).length;
+    document.getElementById('words').textContent = words + (words === 1 ? ' word' : ' words');
+    clearTimeout(timer);
+    document.getElementById('saved').textContent = 'Saving…';
+    timer = setTimeout(persist, 600);
+  }
+  function persist() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ html: editor.innerHTML, settings }));
+      document.getElementById('saved').textContent = 'Autosaved in this browser';
+    } catch (_) {
+      document.getElementById('saved').textContent = 'Autosave unavailable – use Save';
+    }
+  }
+  function load() {
+    try {
+      const data = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (data) { editor.innerHTML = data.html || ''; Object.assign(settings, data.settings || {}); }
+    } catch (_) {}
+    applySettings(); changed();
+  }
+  editor.addEventListener('input', changed);
+
+  /* ---------- Files ---------- */
+  document.getElementById('btnNew').addEventListener('click', () => {
+    if (editor.innerText.trim() && !confirm('Start a new document? Unsaved text will be lost (use Save first if needed).')) return;
+    editor.innerHTML = ''; editor.focus(); changed();
+  });
+
+  function download() {
+    const title = (editor.querySelector('h1')?.innerText || 'summary').trim().slice(0, 40).replace(/[^\w\- ]+/g, '') || 'summary';
+    const date = new Date().toISOString().slice(0, 10);
+    const doc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${title}</title></head>
+<body><div id="klo-content" style="font-family:'${getComputedStyle(editor).fontFamily.replace(/"/g, '')}';font-size:40px;line-height:${settings.lineHeight}">${editor.innerHTML}</div></body></html>`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
+    a.download = `${date} ${title}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  document.getElementById('btnSave').addEventListener('click', download);
+
+  const fileInput = document.getElementById('fileInput');
+  document.getElementById('btnOpen').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      if (/\.txt$/i.test(f.name)) {
+        editor.innerText = r.result;
+      } else {
+        const doc = new DOMParser().parseFromString(r.result, 'text/html');
+        doc.querySelectorAll('script, iframe, object, embed').forEach(n => n.remove());
+        doc.querySelectorAll('*').forEach(n => [...n.attributes].forEach(a => { if (/^on/i.test(a.name)) n.removeAttribute(a.name); }));
+        editor.innerHTML = (doc.getElementById('klo-content') || doc.body).innerHTML;
+      }
+      changed(); fileInput.value = '';
+    };
+    r.readAsText(f);
+  });
+
+  document.getElementById('btnPrint').addEventListener('click', () => window.print());
+
+  /* ---------- Presentation mode ---------- */
+  function togglePresent(force) {
+    const on = force ?? !document.body.classList.contains('present');
+    document.body.classList.toggle('present', on);
+    if (on && document.documentElement.requestFullscreen && !document.fullscreenElement)
+      document.documentElement.requestFullscreen().catch(() => {});
+    if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  }
+  document.getElementById('btnPresent').addEventListener('click', () => togglePresent(true));
+  document.getElementById('exitHint').addEventListener('click', () => togglePresent(false));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) togglePresent(false); });
+
+  /* ---------- Shortcuts ---------- */
+  document.addEventListener('keydown', e => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); download(); }
+    else if (e.key === 'F9') { e.preventDefault(); togglePresent(); }
+    else if (e.key === 'Escape' && document.body.classList.contains('present')) togglePresent(false);
+    else if (mod && (e.key === '+' || e.key === '=')) { e.preventDefault(); setZoom(zoom + 0.1); }
+    else if (mod && e.key === '-') { e.preventDefault(); setZoom(zoom - 0.1); }
+    else if (mod && e.key === '0') { e.preventDefault(); setZoom(1); }
+  });
+
+  // paste as clean text to keep the board readable
+  editor.addEventListener('paste', e => {
+    e.preventDefault();
+    document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
+  });
+
+  load();
+  editor.focus();
+})();
+</script>
+</body>
+</html>
