@@ -104,16 +104,23 @@
     max-width: none; min-height: 100vh; margin: 0;
     border-radius: 0; box-shadow: none; padding: 3vh 4vw;
   }
-  #exitHint {
-    display: none; position: fixed; right: 12px; bottom: 12px;
-    background: rgba(0,0,0,.55); color: #fff; border: none;
-    font-size: 14px; height: auto; padding: 6px 10px; opacity: .25;
+  /* vertical mini toolbar (presentation mode only) */
+  #miniBar {
+    display: none; position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
+    z-index: 20; flex-direction: column; align-items: center; gap: 8px;
+    background: var(--ui-bg); padding: 10px 8px; border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.35); opacity: .85;
   }
-  #exitHint:hover { opacity: 1; }
-  body.present #exitHint { display: block; }
+  #miniBar:hover { opacity: 1; }
+  #miniBar .sep { width: 70%; height: 1px; background: #4b5563; }
+  #miniBar button { width: 44px; height: 40px; font-size: 18px; }
+  #miniBar .swatch { width: 32px; min-width: 32px; height: 32px; }
+  #miniFontSize { width: 58px; padding: 0 2px; font-size: 15px; }
+  body.present #miniBar { display: flex; }
+  body.present #page { padding-right: calc(4vw + 80px); }
 
   @media print {
-    #toolbar, #status, #exitHint { display: none !important; }
+    #toolbar, #status, #miniBar { display: none !important; }
     #desk { padding: 0; overflow: visible; }
     #page { box-shadow: none; max-width: none; padding: 0; transform: none !important; }
   }
@@ -147,7 +154,7 @@
       <option value="Merriweather">Merriweather (serif)</option>
       <option value="Courier New">Courier</option>
     </select>
-    <select id="fontSize" title="Font size">
+    <select id="fontSize" class="fontSizeSel" title="Font size">
       <option selected>20</option><option>24</option><option>28</option><option>32</option>
       <option>36</option><option>40</option><option>48</option><option>56</option>
       <option>64</option><option>72</option><option>88</option><option>110</option>
@@ -225,7 +232,23 @@
   <span id="saved">Autosaved in this browser</span>
 </div>
 
-<button id="exitHint" title="Exit presentation (Esc or F9)">✕ Exit (Esc)</button>
+<div id="miniBar">
+  <select id="miniFontSize" class="fontSizeSel" title="Font size">
+    <option selected>20</option><option>24</option><option>28</option><option>32</option>
+    <option>36</option><option>40</option><option>48</option><option>56</option>
+    <option>64</option><option>72</option><option>88</option><option>110</option>
+  </select>
+  <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+  <div class="sep"></div>
+  <button class="swatch" data-hilite="#fde047" title="Yellow" style="background:#fde047"></button>
+  <button class="swatch" data-hilite="#86efac" title="Green" style="background:#86efac"></button>
+  <button class="swatch" data-hilite="#67e8f9" title="Cyan" style="background:#67e8f9"></button>
+  <button class="swatch" data-hilite="#f9a8d4" title="Pink" style="background:#f9a8d4"></button>
+  <button class="swatch" data-hilite="#fdba74" title="Orange" style="background:#fdba74"></button>
+  <button class="swatch none" data-hilite="transparent" title="Remove highlight"></button>
+  <div class="sep"></div>
+  <button id="exitHint" title="Exit presentation (Esc or F9)">✕</button>
+</div>
 
 <script>
 (() => {
@@ -259,7 +282,7 @@
   }
 
   // keep focus in editor when clicking buttons
-  document.querySelectorAll('#toolbar button').forEach(b =>
+  document.querySelectorAll('#toolbar button, #miniBar button').forEach(b =>
     b.addEventListener('mousedown', e => e.preventDefault()));
 
   document.querySelectorAll('[data-cmd]').forEach(b =>
@@ -272,8 +295,9 @@
   /* ---------- Fonts ---------- */
   document.getElementById('fontName').addEventListener('change', e => exec('fontName', e.target.value));
 
-  document.getElementById('fontSize').addEventListener('change', e => {
+  document.querySelectorAll('.fontSizeSel').forEach(sel => sel.addEventListener('change', e => {
     const px = e.target.value;
+    document.querySelectorAll('.fontSizeSel').forEach(o => o.value = px);
     restoreSelection();
     document.execCommand('styleWithCSS', false, false);
     document.execCommand('fontSize', false, '7');
@@ -286,7 +310,7 @@
     });
     editor.querySelectorAll('[style*="xxx-large"]').forEach(el => el.style.fontSize = px + 'px');
     saveSelection(); changed();
-  });
+  }));
 
   document.getElementById('blockFormat').addEventListener('change', e => exec('formatBlock', '<' + e.target.value + '>'));
 
@@ -315,8 +339,8 @@
   function updateState() {
     if (!editor.contains(document.getSelection().anchorNode)) return;
     stateCmds.forEach(c => {
-      const b = document.querySelector(`[data-cmd="${c}"]`);
-      try { b.classList.toggle('active', document.queryCommandState(c)); } catch (_) {}
+      let on = false; try { on = document.queryCommandState(c); } catch (_) {}
+      document.querySelectorAll(`[data-cmd="${c}"]`).forEach(b => b.classList.toggle('active', on));
     });
     try {
       const blk = (document.queryCommandValue('formatBlock') || 'p').toLowerCase().replace(/[<>]/g, '');
