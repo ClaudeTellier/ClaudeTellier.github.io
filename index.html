@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Klo Board</title>
+<title>4MSBtext</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Lexend:wght@400;700&family=Patrick+Hand&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -48,6 +48,11 @@
   button:hover, select:hover { background: #4b5563; }
   button.active { background: var(--ui-accent); border-color: var(--ui-accent); }
   button.wide { padding: 0 12px; }
+  .brand {
+    font-weight: 800; font-size: 17px; letter-spacing: .5px;
+    border: 2px solid var(--ui-accent); color: #fff; background: #1e3a8a;
+    border-radius: 8px; padding: 4px 12px; margin-right: 4px; white-space: nowrap;
+  }
   #btnPresent { background: #16a34a; border-color: #16a34a; font-weight: 600; }
   #btnPresent:hover { background: #15803d; }
   .swatch {
@@ -55,7 +60,6 @@
     border: 2px solid #9ca3af; border-radius: 50%;
   }
   .swatch.none { background: linear-gradient(135deg, #fff 45%, #dc2626 45%, #dc2626 55%, #fff 55%); }
-  input[type=color] { width: 32px; height: 32px; border: none; background: none; cursor: pointer; padding: 0; }
   #fontSize { width: 74px; }
   #fontName { width: 170px; }
 
@@ -71,13 +75,13 @@
   #editor {
     outline: none; min-height: 60vh;
     font-family: "Atkinson Hyperlegible", Arial, sans-serif;
-    font-size: 40px; line-height: 1.5;
+    font-size: 20px; line-height: 1.5;
     word-wrap: break-word;
   }
   #editor:empty::before { content: "Type your summary here…"; opacity: .35; }
   #editor h1 { font-size: 1.6em; margin: .2em 0 .4em; text-decoration: underline; text-underline-offset: .15em; }
   #editor h2 { font-size: 1.25em; margin: .4em 0 .2em; }
-  #editor h3 { font-size: 1.05em; margin: .3em 0 .1em; font-style: italic; }
+  #editor h3 { font-size: 1.05em; margin: .3em 0 .1em; }
   #editor p, #editor div { margin: 0; }
   #editor ul, #editor ol { margin: .2em 0; padding-left: 1.3em; }
   #editor hr { border: none; border-top: 3px solid currentColor; opacity: .4; margin: .5em 0; }
@@ -118,6 +122,8 @@
 <body>
 
 <div id="toolbar">
+  <div class="brand">4MSBtext</div>
+
   <div class="group">
     <button data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
     <button data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
@@ -142,28 +148,17 @@
       <option value="Courier New">Courier</option>
     </select>
     <select id="fontSize" title="Font size">
-      <option>20</option><option>24</option><option>28</option><option>32</option>
-      <option>36</option><option selected>40</option><option>48</option><option>56</option>
+      <option selected>20</option><option>24</option><option>28</option><option>32</option>
+      <option>36</option><option>40</option><option>48</option><option>56</option>
       <option>64</option><option>72</option><option>88</option><option>110</option>
     </select>
   </div>
 
   <div class="group">
     <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-    <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
     <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
     <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
     <button data-cmd="removeFormat" title="Clear formatting">⌫ Tx</button>
-  </div>
-
-  <div class="group">
-    <span class="label">Text</span>
-    <button class="swatch" data-fore="auto" title="Default colour" style="background:var(--page-fg)"></button>
-    <button class="swatch" data-fore="#dc2626" title="Red" style="background:#dc2626"></button>
-    <button class="swatch" data-fore="#2563eb" title="Blue" style="background:#2563eb"></button>
-    <button class="swatch" data-fore="#16a34a" title="Green" style="background:#16a34a"></button>
-    <button class="swatch" data-fore="#9333ea" title="Purple" style="background:#9333ea"></button>
-    <input type="color" id="foreCustom" value="#ea580c" title="Custom text colour">
   </div>
 
   <div class="group">
@@ -221,7 +216,7 @@
 
 <div id="desk">
   <div id="page">
-    <div id="editor" contenteditable="true" spellcheck="true"></div>
+    <div id="editor" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" translate="no" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" data-lt-active="false"></div>
   </div>
 </div>
 
@@ -236,7 +231,7 @@
 (() => {
   const editor = document.getElementById('editor');
   const page = document.getElementById('page');
-  const STORE = 'klo-board-v1';
+  const STORE = '4msbtext-v1';
   let savedRange = null;
   let zoom = 1;
 
@@ -270,17 +265,7 @@
   document.querySelectorAll('[data-cmd]').forEach(b =>
     b.addEventListener('click', () => exec(b.dataset.cmd)));
 
-  /* ---------- Colours ---------- */
-  document.querySelectorAll('[data-fore]').forEach(b => b.addEventListener('click', () => {
-    if (b.dataset.fore === 'auto') {
-      exec('foreColor', '#010101');
-      editor.querySelectorAll('[style*="color: rgb(1, 1, 1)"], font[color="#010101"]').forEach(el => {
-        el.style.removeProperty('color'); el.removeAttribute('color');
-      });
-      changed();
-    } else exec('foreColor', b.dataset.fore);
-  }));
-  document.getElementById('foreCustom').addEventListener('input', e => exec('foreColor', e.target.value));
+  /* ---------- Highlight ---------- */
   document.querySelectorAll('[data-hilite]').forEach(b =>
     b.addEventListener('click', () => exec('hiliteColor', b.dataset.hilite)));
 
@@ -326,7 +311,7 @@
   });
 
   /* ---------- Toolbar state ---------- */
-  const stateCmds = ['bold', 'italic', 'underline', 'strikeThrough', 'justifyLeft', 'justifyCenter', 'justifyRight', 'insertUnorderedList', 'insertOrderedList'];
+  const stateCmds = ['bold', 'underline', 'strikeThrough', 'justifyLeft', 'justifyCenter', 'justifyRight', 'insertUnorderedList', 'insertOrderedList'];
   function updateState() {
     if (!editor.contains(document.getSelection().anchorNode)) return;
     stateCmds.forEach(c => {
@@ -394,7 +379,7 @@
     const title = (editor.querySelector('h1')?.innerText || 'summary').trim().slice(0, 40).replace(/[^\w\- ]+/g, '') || 'summary';
     const date = new Date().toISOString().slice(0, 10);
     const doc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${title}</title></head>
-<body><div id="klo-content" style="font-family:'${getComputedStyle(editor).fontFamily.replace(/"/g, '')}';font-size:40px;line-height:${settings.lineHeight}">${editor.innerHTML}</div></body></html>`;
+<body><div id="doc-content" style="font-family:'${getComputedStyle(editor).fontFamily.replace(/"/g, '')}';font-size:20px;line-height:${settings.lineHeight}">${editor.innerHTML}</div></body></html>`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
     a.download = `${date} ${title}.html`;
@@ -415,7 +400,7 @@
         const doc = new DOMParser().parseFromString(r.result, 'text/html');
         doc.querySelectorAll('script, iframe, object, embed').forEach(n => n.remove());
         doc.querySelectorAll('*').forEach(n => [...n.attributes].forEach(a => { if (/^on/i.test(a.name)) n.removeAttribute(a.name); }));
-        editor.innerHTML = (doc.getElementById('klo-content') || doc.body).innerHTML;
+        editor.innerHTML = (doc.getElementById('doc-content') || doc.getElementById('klo-content') || doc.body).innerHTML;
       }
       changed(); fileInput.value = '';
     };
@@ -439,7 +424,8 @@
   /* ---------- Shortcuts ---------- */
   document.addEventListener('keydown', e => {
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); download(); }
+    if (mod && e.key.toLowerCase() === 'i') { e.preventDefault(); }
+    else if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); download(); }
     else if (e.key === 'F9') { e.preventDefault(); togglePresent(); }
     else if (e.key === 'Escape' && document.body.classList.contains('present')) togglePresent(false);
     else if (mod && (e.key === '+' || e.key === '=')) { e.preventDefault(); setZoom(zoom + 0.1); }
@@ -452,6 +438,12 @@
     e.preventDefault();
     document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
   });
+
+  // never show spell-check underlines, whatever the browser
+  const noSpell = el => { el.spellcheck = false; el.setAttribute('spellcheck', 'false'); };
+  noSpell(document.body); noSpell(editor);
+  new MutationObserver(() => { if (editor.getAttribute('spellcheck') !== 'false') noSpell(editor); })
+    .observe(editor, { attributes: true, attributeFilter: ['spellcheck'] });
 
   load();
   editor.focus();
