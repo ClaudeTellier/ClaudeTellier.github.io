@@ -75,7 +75,7 @@
   #editor {
     outline: none; min-height: 60vh;
     font-family: "Atkinson Hyperlegible", Arial, sans-serif;
-    font-size: 28px; line-height: 1.5;
+    font-size: 28px; line-height: 1.15; text-align: justify;
     word-wrap: break-word;
   }
   #editor:empty::before { content: "Type your summary here…"; opacity: .35; }
@@ -115,7 +115,9 @@
   #miniBar .sep { width: 70%; height: 1px; background: #4b5563; }
   #miniBar button { width: 44px; height: 40px; font-size: 18px; }
   #miniBar .swatch { width: 32px; min-width: 32px; height: 32px; }
-  #miniFontSize { width: 58px; padding: 0 2px; font-size: 15px; }
+  #miniFontSize, #miniBar .lineHeightSel { width: 62px; padding: 0 2px; font-size: 15px; }
+  #miniBar .alignGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  #miniBar .alignGrid button { width: 34px; min-width: 34px; height: 34px; padding: 0; font-size: 16px; }
   body.present #miniBar { display: flex; }
   body.present #page { padding-right: calc(4vw + 80px); }
 
@@ -155,7 +157,7 @@
       <option value="Courier New">Courier</option>
     </select>
     <select id="fontSize" class="fontSizeSel" title="Font size">
-      <option selected>20</option><option>24</option><option>28</option><option>32</option>
+      <option>20</option><option>24</option><option selected>28</option><option>32</option>
       <option>36</option><option>40</option><option>48</option><option>56</option>
       <option>64</option><option>72</option><option>88</option><option>110</option>
     </select>
@@ -182,6 +184,7 @@
     <button data-cmd="justifyLeft" title="Align left">⫷</button>
     <button data-cmd="justifyCenter" title="Centre">≡</button>
     <button data-cmd="justifyRight" title="Align right">⫸</button>
+    <button data-cmd="justifyFull" title="Justify">☰</button>
     <button data-cmd="insertUnorderedList" title="Bullet list">• List</button>
     <button data-cmd="insertOrderedList" title="Numbered list">1. List</button>
     <button data-cmd="outdent" title="Decrease indent">⇤</button>
@@ -195,9 +198,10 @@
   </div>
 
   <div class="group">
-    <select id="lineHeight" title="Line spacing">
+    <select id="lineHeight" class="lineHeightSel" title="Line spacing">
+      <option value="1.15" selected>Single spacing</option>
       <option value="1.2">Spacing 1.2</option>
-      <option value="1.5" selected>Spacing 1.5</option>
+      <option value="1.5">Spacing 1.5</option>
       <option value="1.8">Spacing 1.8</option>
       <option value="2.2">Spacing 2.2</option>
     </select>
@@ -234,11 +238,25 @@
 
 <div id="miniBar">
   <select id="miniFontSize" class="fontSizeSel" title="Font size">
-    <option selected>20</option><option>24</option><option>28</option><option>32</option>
+    <option>20</option><option>24</option><option selected>28</option><option>32</option>
     <option>36</option><option>40</option><option>48</option><option>56</option>
     <option>64</option><option>72</option><option>88</option><option>110</option>
   </select>
   <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+  <select class="lineHeightSel" title="Line spacing">
+    <option value="1.15" selected>1</option>
+    <option value="1.2">1.2</option>
+    <option value="1.5">1.5</option>
+    <option value="1.8">1.8</option>
+    <option value="2.2">2.2</option>
+  </select>
+  <div class="sep"></div>
+  <div class="alignGrid">
+    <button data-cmd="justifyLeft" title="Align left">⫷</button>
+    <button data-cmd="justifyCenter" title="Centre">≡</button>
+    <button data-cmd="justifyRight" title="Align right">⫸</button>
+    <button data-cmd="justifyFull" title="Justify">☰</button>
+  </div>
   <div class="sep"></div>
   <button class="swatch" data-hilite="#fde047" title="Yellow" style="background:#fde047"></button>
   <button class="swatch" data-hilite="#86efac" title="Green" style="background:#86efac"></button>
@@ -335,7 +353,7 @@
   });
 
   /* ---------- Toolbar state ---------- */
-  const stateCmds = ['bold', 'underline', 'strikeThrough', 'justifyLeft', 'justifyCenter', 'justifyRight', 'insertUnorderedList', 'insertOrderedList'];
+  const stateCmds = ['bold', 'underline', 'strikeThrough', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull', 'insertUnorderedList', 'insertOrderedList'];
   function updateState() {
     if (!editor.contains(document.getSelection().anchorNode)) return;
     stateCmds.forEach(c => {
@@ -349,7 +367,7 @@
   }
 
   /* ---------- Page settings ---------- */
-  const settings = { theme: 'white', lineHeight: '1.5', zoom: 1 };
+  const settings = { theme: 'white', lineHeight: '1.15', zoom: 1, v: 2 };
   function applySettings() {
     document.body.classList.remove('theme-cream', 'theme-dark');
     if (settings.theme !== 'white') document.body.classList.add('theme-' + settings.theme);
@@ -358,10 +376,10 @@
     page.style.zoom = zoom;
     document.getElementById('zoomReset').textContent = Math.round(zoom * 100) + '%';
     document.getElementById('theme').value = settings.theme;
-    document.getElementById('lineHeight').value = settings.lineHeight;
+    document.querySelectorAll('.lineHeightSel').forEach(o => o.value = settings.lineHeight);
   }
   document.getElementById('theme').addEventListener('change', e => { settings.theme = e.target.value; applySettings(); persist(); });
-  document.getElementById('lineHeight').addEventListener('change', e => { settings.lineHeight = e.target.value; applySettings(); persist(); });
+  document.querySelectorAll('.lineHeightSel').forEach(sel => sel.addEventListener('change', e => { settings.lineHeight = e.target.value; applySettings(); persist(); editor.focus(); }));
   const setZoom = z => { settings.zoom = Math.min(2.5, Math.max(0.5, Math.round(z * 10) / 10)); applySettings(); persist(); };
   document.getElementById('zoomIn').addEventListener('click', () => setZoom(zoom + 0.1));
   document.getElementById('zoomOut').addEventListener('click', () => setZoom(zoom - 0.1));
@@ -387,7 +405,7 @@
   function load() {
     try {
       const data = JSON.parse(localStorage.getItem(STORE) || 'null');
-      if (data) { editor.innerHTML = data.html || ''; Object.assign(settings, data.settings || {}); }
+      if (data) { editor.innerHTML = data.html || ''; const st = data.settings || {}; if (st.v !== 2) { delete st.lineHeight; st.v = 2; } Object.assign(settings, st); }
     } catch (_) {}
     applySettings(); changed();
   }
@@ -403,7 +421,7 @@
     const title = (editor.querySelector('h1')?.innerText || 'summary').trim().slice(0, 40).replace(/[^\w\- ]+/g, '') || 'summary';
     const date = new Date().toISOString().slice(0, 10);
     const doc = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${title}</title></head>
-<body><div id="doc-content" style="font-family:'${getComputedStyle(editor).fontFamily.replace(/"/g, '')}';font-size:20px;line-height:${settings.lineHeight}">${editor.innerHTML}</div></body></html>`;
+<body><div id="doc-content" style="font-family:'${getComputedStyle(editor).fontFamily.replace(/"/g, '')}';font-size:28px;text-align:justify;line-height:${settings.lineHeight}">${editor.innerHTML}</div></body></html>`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
     a.download = `${date} ${title}.html`;
